@@ -8,4 +8,4 @@ The `Disable` button is in case you wish to temporarily disable the program, so 
 To use the window specific binds, enter the name of your desired window in `Active Window` and click `Save/Apply`. This will make that bind only run while that window is in focus.  
 You can see which binds are active by their color changing. Red means it's inactive and green means it's active.
 
-![Demonstration GIF](https://i.imgur.com/bswDnXg.gif)
+![Demonstration GIF](./assets/named-window-demo.gif)
