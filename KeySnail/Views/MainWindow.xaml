@@ -11,11 +11,11 @@
         xmlns:prism="http://prismlibrary.com/"
         xmlns:behaviors="clr-namespace:KeySnail.Behaviors"
         mc:Ignorable="d"
-        Title="KeySnail" Height="450" Width="800">
+        Title="KeySnail" Height="450" Width="860">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="3*" />
+            <ColumnDefinition Width="2*" />
         </Grid.ColumnDefinitions>
 
         <Grid>
@@ -23,12 +23,29 @@
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            
-            <StackPanel>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                
                 <ListView ItemsSource="{Binding KeyBinds}" SelectedItem="{Binding SelectedKeyBind}">
                     <ListView.Resources>
                         <Style TargetType="ListViewItem">
                             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Background" Value="IndianRed" />
+                            <Setter Property="Focusable" Value="False" />
+                            
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsActive}"
+                                             Value="True">
+                                    <Setter Property="Background"
+                                            Value="LightGreen" />
+                                </DataTrigger>
+                            </Style.Triggers>
+
                         </Style>
                     </ListView.Resources>
 
@@ -66,18 +83,32 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
+                            <GridViewColumn Header="Active Window" Width="160">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBox Text="{Binding Path=ActiveWindow}">
+                                        </TextBox>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
                         </GridView>
                     </ListView.View>
                 </ListView>
-                <Button Command="{Binding CommandAddKeyBind}" Content="Add Binding" />
-                <Button Command="{Binding CommandSave}" Content="Save/Apply" />
-            </StackPanel>
+                <Button Grid.Row="1" Command="{Binding CommandAddKeyBind}" Content="Add Binding" />
+                <Button Grid.Row="2" Command="{Binding CommandSave}" Content="Save/Apply" />
+            </Grid>
 
             <StackPanel Grid.Row="1">
                 <Button Height="24" Command="{Binding CommandToggleProgram}" Content="{Binding ToggleButton}" />
             </StackPanel>
         </Grid>
 
-        <ListView Grid.Column="1" ItemsSource="{Binding Log}" IsSynchronizedWithCurrentItem="True" />
+        <ListView Grid.Column="1" Focusable="False" ItemsSource="{Binding Log}" IsSynchronizedWithCurrentItem="True">
+            <ListView.Resources>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="Focusable" Value="False" />
+                </Style>
+            </ListView.Resources>
+        </ListView>
     </Grid>
 </Window>

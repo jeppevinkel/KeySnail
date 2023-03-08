@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -10,6 +11,7 @@ using KeySnail.Enums;
 using KeySnail.Extensions;
 using KeySnail.Models;
 using KeySnail.Utilities;
+using KeySnail.Windows;
 using Prism.Commands;
 using Prism.Mvvm;
 
@@ -22,6 +24,7 @@ public class MainWindowViewModel : BindableBase
     private Services.IKeyBindStore _keyBindStore = null;
     
     private string _toggleButton = "Disable";
+    private string _activeWindow = string.Empty;
 
     public string ToggleButton
     {
@@ -65,6 +68,19 @@ public class MainWindowViewModel : BindableBase
             _keyboardHook.KeyDown -= new KeyboardHook.KeyboardHookCallback(KeyboardHook_KeyDown);
             _keyboardHook.KeyUp -= new KeyboardHook.KeyboardHookCallback(KeyboardHook_KeyUp);
             _keyboardHook.Uninstall();
+        };
+
+        WindowsApiStuff.Init();
+        WindowsApiStuff.OnWindowChanged += (sender, args) =>
+        {
+            WriteLog($"Active window changed to {args.NewWindowTitle}");
+            _activeWindow = args.NewWindowTitle;
+
+            foreach (var keyBind in KeyBinds)
+            {
+                keyBind.IsActive = CompareWindowStrings(_activeWindow, keyBind.ActiveWindow);
+                WriteLog(keyBind.FromKey + "->" + keyBind.ToKey + ": " + keyBind.IsActive);
+            }
         };
     }
 
@@ -117,7 +133,7 @@ public class MainWindowViewModel : BindableBase
         if (_pressedKeys.ContainsKey(key))
             return;
 
-        var relevantKeyBinds = KeyBinds.Where(keyBind => keyBind.FromKey == key.ToKeyType()).ToList();
+        var relevantKeyBinds = KeyBinds.Where(keyBind => keyBind.IsActive && keyBind.FromKey == key.ToKeyType()).ToList();
         if (HotkeyEnabled && relevantKeyBinds.Count > 0)
         {
             foreach (var keyBind in relevantKeyBinds)
@@ -158,5 +174,15 @@ public class MainWindowViewModel : BindableBase
     {
         await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
         _inputSimulator.Keyboard.KeyUp(key.ToVirtualKeyCode());
+    }
+
+    private bool CompareWindowStrings(string windowTitle, string? needle)
+    {
+        if (needle is null || needle.Length == 0 || windowTitle.Contains(needle))
+        {
+            return true;
+        }
+        
+        return false;
     }
 }
