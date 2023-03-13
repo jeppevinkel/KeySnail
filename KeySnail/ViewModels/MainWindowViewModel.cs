@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -12,6 +13,7 @@ using KeySnail.Extensions;
 using KeySnail.Models;
 using KeySnail.Utilities;
 using KeySnail.Windows;
+using KeySnail.Windows.Enums;
 using Prism.Commands;
 using Prism.Mvvm;
 
@@ -82,6 +84,43 @@ public class MainWindowViewModel : BindableBase
                 WriteLog(keyBind.FromKey + "->" + keyBind.ToKey + ": " + keyBind.IsActive);
             }
         };
+
+        // HashSet<KeyboardHook.VKeys> keysBeingPress = new HashSet<KeyboardHook.VKeys>();
+        // HashSet<KeyboardHook.VKeys> keysBeingRelease = new HashSet<KeyboardHook.VKeys>();
+
+        // WindowsApiStuff.OnKeyboardEvent += (sender, args) =>
+        // {
+        //     if (args.EventType == KeyEvent.KEY_DOWN)
+        //     {
+        //         if (!keysBeingPress.Contains(args.Key))
+        //         {
+        //             WriteLog($"Swallowed {args.Key.ToKeyType()} DOWN");
+        //             keysBeingPress.Add(args.Key);
+        //             args.PreventDefault = true;
+        //             PressKeyWithDelay(args.Key.ToKeyType(), 2);
+        //             return;
+        //         }
+        //         
+        //         WriteLog($"Pressing {args.Key.ToKeyType()}");
+        //         keysBeingPress.Remove(args.Key);
+        //     }
+        //     
+        //     if (args.EventType == KeyEvent.KEY_UP)
+        //     {
+        //         if (!keysBeingRelease.Contains(args.Key))
+        //         {
+        //             WriteLog($"Swallowed {args.Key.ToKeyType()} UP");
+        //             keysBeingRelease.Add(args.Key);
+        //             args.PreventDefault = true;
+        //             ReleaseKeyWithDelay(args.Key.ToKeyType(), 2);
+        //             return;
+        //         }
+        //
+        //         WriteLog($"Releasing {args.Key.ToKeyType()}");
+        //         keysBeingRelease.Remove(args.Key);
+        //     }
+        //     
+        // };
     }
 
     public ObservableCollection<HotkeyBind> KeyBinds { get; } =
@@ -128,18 +167,25 @@ public class MainWindowViewModel : BindableBase
         Log.Insert(0, $"[{DateTime.Now:HH:mm:ss}] {content}");
     }
 
+    private Dictionary<KeyTypes, HotkeyEventData> _cancellationTokens = new();
+
     private void KeyboardHook_KeyDown(KeyboardHook.VKeys key)
     {
         if (_pressedKeys.ContainsKey(key))
             return;
+        
+        var keyType = key.ToKeyType();
 
-        var relevantKeyBinds = KeyBinds.Where(keyBind => keyBind.IsActive && keyBind.FromKey == key.ToKeyType()).ToList();
+        var relevantKeyBinds = KeyBinds.Where(keyBind => keyBind.IsActive && keyBind.FromKey == keyType).ToList();
         if (HotkeyEnabled && relevantKeyBinds.Count > 0)
         {
+            var tokenSource = new CancellationTokenSource();
+            _cancellationTokens.Add(keyType, new HotkeyEventData(tokenSource));
+            
             foreach (var keyBind in relevantKeyBinds)
             {
                 // _inputSimulator.Keyboard.KeyDown(keyBind.ToKey.ToVirtualKeyCode());
-                PressKeyWithDelay(keyBind.ToKey, keyBind.Delay);
+                PressKeyWithDelay(keyBind.ToKey, keyBind.Delay, tokenSource.Token);
             }
         }
         
@@ -150,7 +196,23 @@ public class MainWindowViewModel : BindableBase
 
     private void KeyboardHook_KeyUp(KeyboardHook.VKeys key)
     {
-        if (HotkeyEnabled && _pressedKeys.TryGetValue(key, out var relevantKeyBinds))
+        var keyType = key.ToKeyType();
+        var cancelled = false;
+        if (_cancellationTokens.TryGetValue(keyType, out HotkeyEventData hotkeyEventData))
+        {
+            var duration = DateTime.Now.Subtract(hotkeyEventData.StartTime);
+            WriteLog($"{keyType} released after {duration.TotalMilliseconds}ms");
+
+            if (duration.TotalMilliseconds < 250)
+            {
+                hotkeyEventData.TokenSource.Cancel();
+                cancelled = true;
+                WriteLog($"Cancelled the press of {keyType}");
+            }
+            _cancellationTokens.Remove(keyType);
+        }
+        
+        if (!cancelled && HotkeyEnabled && _pressedKeys.TryGetValue(key, out var relevantKeyBinds))
         {
             foreach (var keyBind in relevantKeyBinds)
             {
@@ -164,15 +226,27 @@ public class MainWindowViewModel : BindableBase
         WriteLog($"Released {key.ToString()}");
     }
 
-    private async Task PressKeyWithDelay(KeyTypes key, float delaySeconds)
+    private async Task PressKeyWithDelay(KeyTypes key, float delaySeconds, CancellationToken? cancellationToken = null)
     {
         await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
+
+        if (cancellationToken?.IsCancellationRequested ?? false)
+        {
+            return;
+        }
+        
         _inputSimulator.Keyboard.KeyDown(key.ToVirtualKeyCode());
     }
 
-    private async Task ReleaseKeyWithDelay(KeyTypes key, float delaySeconds)
+    private async Task ReleaseKeyWithDelay(KeyTypes key, float delaySeconds, CancellationToken? cancellationToken = null)
     {
         await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
+        
+        if (cancellationToken?.IsCancellationRequested ?? false)
+        {
+            return;
+        }
+        
         _inputSimulator.Keyboard.KeyUp(key.ToVirtualKeyCode());
     }
 
