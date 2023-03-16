@@ -31,7 +31,7 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 
-                <ListView ItemsSource="{Binding KeyBinds}" SelectedItem="{Binding SelectedKeyBind}">
+                <ListView Name="LvKeyBinds" ItemsSource="{Binding KeyBinds}" SelectedItem="{Binding SelectedKeyBind}">
                     <ListView.Resources>
                         <Style TargetType="ListViewItem">
                             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -91,14 +91,25 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
+                            <GridViewColumn Header="" Width="35">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="X"
+                                                Command="{Binding DataContext.CommandDeleteKeyBind, Source={x:Reference LvKeyBinds}}"
+                                                CommandParameter="{Binding}">
+                                        </Button>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
                         </GridView>
                     </ListView.View>
                 </ListView>
-                <Button Grid.Row="1" Command="{Binding CommandAddKeyBind}" Content="Add Binding" />
-                <Button Grid.Row="2" Command="{Binding CommandSave}" Content="Save/Apply" />
             </Grid>
 
             <StackPanel Grid.Row="1">
+                <Button Command="{Binding CommandAddKeyBind}" Content="Add Binding" />
+                <Button Command="{Binding CommandSave}" Content="Save/Apply" />
+                <Button Command="{Binding CommandUndo}" Content="Undo Changes" />
                 <Button Height="24" Command="{Binding CommandToggleProgram}" Content="{Binding ToggleButton}" />
             </StackPanel>
         </Grid>

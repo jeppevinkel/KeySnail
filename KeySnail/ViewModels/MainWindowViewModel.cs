@@ -135,10 +135,20 @@ public class MainWindowViewModel : BindableBase
     public DelegateCommand CommandAddKeyBind =>
         _commandAddKeyBind ??= new DelegateCommand(CommandAddKeyBindExecute);
 
+    private DelegateCommand<object>? _commandDeleteKeyBind = null;
+
+    public DelegateCommand<object> CommandDeleteKeyBind =>
+        _commandDeleteKeyBind ??= new DelegateCommand<object>(CommandDeleteKeyBindExecute);
+
     private DelegateCommand? _commandSave = null;
 
     public DelegateCommand CommandSave =>
         _commandSave ??= new DelegateCommand(CommandSaveExecute);
+
+    private DelegateCommand? _commandUndo = null;
+
+    public DelegateCommand CommandUndo =>
+        _commandUndo ??= new DelegateCommand(CommandUndoExecute);
 
     private DelegateCommand? _commandToggleProgram = null;
 
@@ -156,10 +166,27 @@ public class MainWindowViewModel : BindableBase
         WriteLog($"Saving...");
     }
 
+    private void CommandUndoExecute()
+    {
+        WriteLog($"Loading stored config...");
+        KeyBinds.Clear();
+        List<HotkeyBind> list = _keyBindStore.GetAll();
+        foreach (HotkeyBind item in list)
+            KeyBinds.Add(item);
+    }
+
     private void CommandToggleProgramExecute()
     {
         HotkeyEnabled = !HotkeyEnabled;
         WriteLog(HotkeyEnabled ? "Key binds enabled!" : "Key binds disabled!");
+    }
+
+    private void CommandDeleteKeyBindExecute(object parameter)
+    {
+        if (parameter is HotkeyBind hotkeyBind)
+        {
+            KeyBinds.Remove(hotkeyBind);
+        }
     }
 
     private void WriteLog(object content)
