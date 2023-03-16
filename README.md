@@ -8,6 +8,11 @@ The `Disable` button is in case you wish to temporarily disable the program, so 
 To use the window specific binds, enter the name of your desired window in `Active Window` and click `Save/Apply`. This will make that bind only run while that window is in focus.  
 You can see which binds are active by their color changing. Red means it's inactive and green means it's active.
 
+## Feedback
+For now please leave any feedback you have as a github issue [here](https://github.com/jeppevinkel/KeySnail/issues). I haven't set up a proper protocol for giving feedback yet, so I will just handle them on a case by case basis.
+
+## Demonstration
+Disclaimer, this is an older version and the UI looks slightly different now.
 ![Demonstration GIF](./assets/named-window-demo.gif)
 
 ## Troubleshooting
