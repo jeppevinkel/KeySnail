@@ -16,6 +16,7 @@ namespace KeySnail
             containerRegistry.Register<Services.IKeyboardService, Services.KeyboardServiceInstance>();
             containerRegistry.Register<Services.IKeyBindStore, Services.DbKeyBindStore>();
             containerRegistry.Register<Services.IInputSimulatorInstance, Services.InputSimulatorInstance>();
+            containerRegistry.Register<Services.IVersionService, Services.GitHubVersionService>();
         }
 
         protected override Window CreateShell()

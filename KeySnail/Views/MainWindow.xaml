@@ -11,12 +11,16 @@
         xmlns:prism="http://prismlibrary.com/"
         xmlns:behaviors="clr-namespace:KeySnail.Behaviors"
         mc:Ignorable="d"
-        Title="KeySnail" Height="450" Width="860">
+        Title="KeySnail" Height="450" Width="900" MinHeight="450" MinWidth="900">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="3*" />
             <ColumnDefinition Width="2*" />
         </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
 
         <Grid>
             <Grid.RowDefinitions>
@@ -30,14 +34,14 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                
-                <ListView Name="LvKeyBinds" ItemsSource="{Binding KeyBinds}" SelectedItem="{Binding SelectedKeyBind}">
+
+                <ListView Name="LvKeyBinds" ItemsSource="{Binding KeyBinds}">
                     <ListView.Resources>
                         <Style TargetType="ListViewItem">
                             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                             <Setter Property="Background" Value="IndianRed" />
                             <Setter Property="Focusable" Value="False" />
-                            
+
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsActive}"
                                              Value="True">
@@ -121,5 +125,40 @@
                 </Style>
             </ListView.Resources>
         </ListView>
+
+        <Grid Grid.Row="1" Grid.ColumnSpan="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock 
+                Margin="5 2"
+                Text="{Binding CurrentVersion, StringFormat=Version: {0}}" />
+
+            <TextBlock Grid.Column="1"
+                       Margin="5 2">
+                <TextBlock.Resources>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed" />
+
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding NewUpdateAvailable}"
+                                         Value="True">
+                                <Setter Property="Visibility"
+                                        Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+
+                    </Style>
+                </TextBlock.Resources>
+                
+                <Hyperlink NavigateUri="{Binding LatestRelease.Url}"
+                           Command="{Binding CommandOpenHyperlink}"
+                           CommandParameter="{Binding LatestRelease.Url}">
+                    <TextBlock Text="{Binding LatestRelease.SemVersion, StringFormat={}{0} available!}" />
+                </Hyperlink>
+            </TextBlock>
+        </Grid>
     </Grid>
 </Window>

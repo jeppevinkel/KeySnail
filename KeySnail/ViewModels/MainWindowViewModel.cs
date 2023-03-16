@@ -6,16 +6,15 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
 using GregsStack.InputSimulatorStandard;
 using KeySnail.Enums;
 using KeySnail.Extensions;
 using KeySnail.Models;
 using KeySnail.Utilities;
 using KeySnail.Windows;
-using KeySnail.Windows.Enums;
 using Prism.Commands;
 using Prism.Mvvm;
+using Version = SemanticVersioning.Version;
 
 namespace KeySnail.ViewModels;
 
@@ -27,11 +26,32 @@ public class MainWindowViewModel : BindableBase
     
     private string _toggleButton = "Disable";
     private string _activeWindow = string.Empty;
+    private Version _currentVersion = new Version(1, 1, 0);
+    private Release? _latestRelease;
+    private bool _newUpdateAvailable = false;
 
     public string ToggleButton
     {
         get => _toggleButton;
         set => SetProperty(ref _toggleButton, value);
+    }
+
+    public Version CurrentVersion
+    {
+        get => _currentVersion;
+        set => SetProperty(ref _currentVersion, value);
+    }
+
+    public Release? LatestRelease
+    {
+        get => _latestRelease;
+        set => SetProperty(ref _latestRelease, value);
+    }
+
+    public bool NewUpdateAvailable
+    {
+        get => _newUpdateAvailable;
+        set => SetProperty(ref _newUpdateAvailable, value);
     }
 
     private bool _hotkeyEnabled = true;
@@ -49,7 +69,8 @@ public class MainWindowViewModel : BindableBase
 
     public MainWindowViewModel(Services.IInputSimulatorInstance inputSimulatorInstance,
         Services.IKeyBindStore keyBindStore,
-        Services.IKeyboardService keyboardServiceInstance)
+        Services.IKeyboardService keyboardServiceInstance,
+        Services.IVersionService versionService)
     {
         _inputSimulator = inputSimulatorInstance.Get();
         _keyboardHook = keyboardServiceInstance.Get();
@@ -121,6 +142,13 @@ public class MainWindowViewModel : BindableBase
         //     }
         //     
         // };
+
+        LatestRelease = versionService.GetLatestVersion();
+
+        if (LatestRelease?.SemVersion > CurrentVersion)
+        {
+            NewUpdateAvailable = true;
+        }
     }
 
     public ObservableCollection<HotkeyBind> KeyBinds { get; } =
@@ -155,6 +183,11 @@ public class MainWindowViewModel : BindableBase
     public DelegateCommand CommandToggleProgram =>
         _commandToggleProgram ??= new DelegateCommand(CommandToggleProgramExecute);
 
+    private DelegateCommand<object>? _commandOpenHyperlink = null;
+
+    public DelegateCommand<object> CommandOpenHyperlink =>
+        _commandOpenHyperlink ??= new DelegateCommand<object>(CommandOpenHyperlinkExecute);
+
     private void CommandAddKeyBindExecute()
     {
         KeyBinds.Add(new HotkeyBind());
@@ -187,6 +220,26 @@ public class MainWindowViewModel : BindableBase
         {
             KeyBinds.Remove(hotkeyBind);
         }
+    }
+
+    private void CommandOpenHyperlinkExecute(object? parameter)
+    {
+        if (parameter is null) return;
+        string url;
+
+        switch (parameter)
+        {
+            case string str:
+                url = str;
+                break;
+            case Uri uri:
+                url = uri.AbsoluteUri;
+                break;
+            default:
+                return;
+        }
+
+        Process.Start(new ProcessStartInfo(url) {UseShellExecute = true});
     }
 
     private void WriteLog(object content)
