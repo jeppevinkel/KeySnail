@@ -9,3 +9,6 @@ To use the window specific binds, enter the name of your desired window in `Acti
 You can see which binds are active by their color changing. Red means it's inactive and green means it's active.
 
 ![Demonstration GIF](./assets/named-window-demo.gif)
+
+## Troubleshooting
+There's not much to troubleshoot yet, but in case you run into issues, the config files will all be located at `%LocalAppData%\KeySnail`
